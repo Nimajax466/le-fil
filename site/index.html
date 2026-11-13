@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eceef1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Le Fil">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Le Fil</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231b1f27'/%3E%3Crect x='7' y='9' width='18' height='3.4' rx='1.7' fill='%23f2c200'/%3E%3Crect x='7' y='15' width='18' height='3.4' rx='1.7' fill='%23fff'/%3E%3Crect x='7' y='21' width='11' height='3.4' rx='1.7' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --fond: #eceef1;
+  --carte: #ffffff;
+  --encre: #1b1f27;
+  --encre-2: #555c6a;
+  --encre-3: #8b919d;
+  --lu: #808796;
+  --trait: #e4e7eb;
+  --surligneur: #fff4b8;
+  --surligneur-fort: #f2c200;
+  --direct: #1f9d55;
+  --ombre: 0 0 0 1px rgba(27,31,39,.035), 0 1px 2px rgba(27,31,39,.05), 0 2px 14px rgba(27,31,39,.075);
+  --ombre-survol: 0 0 0 1px rgba(27,31,39,.05), 0 2px 4px rgba(27,31,39,.07), 0 8px 26px rgba(27,31,39,.12);
+  --police: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --largeur: 780px;
+  --rayon: 10px;
+  --h: 168px;          /* hauteur fixe d'une carte (mode classique) */
+  --ecart: 14px;
+  --vignette: 224px;
+  --h-ligne: 44px;     /* hauteur fixe d'une ligne (mode compact) */
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); -webkit-text-size-adjust: 100%; background: var(--fond); }
+body { margin: 0; min-height: 100%; background: var(--fond); color: var(--encre); font-family: var(--police); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: rgba(236,238,241,.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+
+/* ---------- barre du haut ---------- */
+.barre { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: rgba(236,238,241,.9); -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px); }
+.barre-int { max-width: var(--largeur); margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.logo { margin: 0; font-size: 23px; line-height: 1; font-weight: 800; letter-spacing: -0.035em; }
+.etat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border: 0; border-radius: 8px; background: none; font-size: 13px; font-weight: 500; color: var(--encre-2); cursor: pointer; white-space: nowrap; }
+.etat:hover { background: rgba(27,31,39,.06); }
+.point { width: 8px; height: 8px; border-radius: 50%; background: var(--encre-3); flex: none; }
+.etat[data-etat="direct"] .point { background: var(--direct); box-shadow: 0 0 0 3px rgba(31,157,85,.16); }
+.etat[data-etat="coupe"] .point { background: #d97706; }
+.etat[data-etat="apercu"] .point { background: var(--surligneur-fort); }
+.modes { margin-left: auto; display: flex; padding: 3px; border-radius: 9px; background: rgba(27,31,39,.07); }
+.modes button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0; border-radius: 7px; background: transparent; font-size: 13px; font-weight: 500; color: var(--encre-2); cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--carte); color: var(--encre); box-shadow: 0 1px 2px rgba(27,31,39,.12); }
+.modes svg { width: 16px; height: 16px; flex: none; }
+
+.bandeau { max-width: var(--largeur); margin: 4px auto 0; padding: 0 16px; font-size: 13px; color: var(--encre-2); }
+.bandeau[hidden] { display: none; }
+
+/* ---------- liste ---------- */
+main { max-width: var(--largeur); margin: 0 auto; padding: 8px 16px 56px; }
+.vide { margin: 48px 4px; color: var(--encre-2); text-align: center; }
+.vide[hidden] { display: none; }
+
+.item { height: calc(var(--h) + var(--ecart)); padding-bottom: var(--ecart); }
+.carte { position: relative; display: flex; height: var(--h); overflow: hidden; border-radius: var(--rayon); background-color: var(--carte); box-shadow: var(--ombre); color: var(--encre); text-decoration: none; transition: box-shadow .2s ease, background-color 1.4s ease; }
+.carte:hover { box-shadow: var(--ombre-survol); }
+.carte::before { content: ""; position: absolute; z-index: 2; inset: 0 auto 0 0; width: 4px; background: var(--surligneur-fort); opacity: 0; transition: opacity 1.4s ease; }
+
+.vignette { position: relative; flex: 0 0 var(--vignette); overflow: hidden; background: hsl(var(--teinte) 30% 90%); }
+.substitut { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,.96); background: hsl(var(--teinte) 38% 47%); }
+.vignette img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 14px 18px 13px; }
+.titre { margin: 0; font-size: 17.5px; line-height: 1.28; font-weight: 650; letter-spacing: -0.008em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.extrait { margin: 0; font-size: 14.5px; line-height: 1.45; color: var(--encre-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.meta { margin-top: auto; display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 12.5px; line-height: 1.4; color: var(--encre-3); }
+.source { display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; color: var(--encre-2); white-space: nowrap; }
+.source::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 2px; background: hsl(var(--teinte) 38% 47%); }
+.nom { overflow: hidden; text-overflow: ellipsis; }
+.heure { flex: none; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.carte:visited .titre { color: var(--lu); }
+
+/* nouvel article : surligné, puis le surligneur s'efface */
+.item.neuf .carte { background-color: var(--surligneur); }
+.item.neuf .carte::before { opacity: 1; }
+
+/* arrivée : la place s'ouvre en poussant la liste vers le bas */
+@keyframes ouverture { from { height: 0; padding-bottom: 0; } }
+@keyframes apparition { from { opacity: 0; transform: translateY(-12px); } }
+.item.arrive { overflow: hidden; animation: ouverture .44s cubic-bezier(.2,.8,.2,1) both; }
+.item.arrive .carte { animation: apparition .44s cubic-bezier(.2,.8,.2,1) .04s both; }
+
+/* ---------- mode compact, façon boîte mail ---------- */
+body[data-mode="compact"] { --h: var(--h-ligne); --ecart: 0px; }
+[data-mode="compact"] .liste { overflow: hidden; border-radius: var(--rayon); background: var(--carte); box-shadow: var(--ombre); }
+[data-mode="compact"] .liste:empty { display: none; }
+[data-mode="compact"] .item { border-bottom: 1px solid var(--trait); }
+[data-mode="compact"] .item:last-child { border-bottom-color: transparent; }
+[data-mode="compact"] .carte { height: 100%; border-radius: 0; box-shadow: none; background-color: transparent; }
+[data-mode="compact"] .carte:hover { z-index: 1; box-shadow: inset 0 0 0 1px rgba(27,31,39,.05), 0 1px 3px rgba(27,31,39,.16); }
+[data-mode="compact"] .item.neuf .carte { background-color: var(--surligneur); }
+[data-mode="compact"] .vignette,
+[data-mode="compact"] .extrait { display: none; }
+[data-mode="compact"] .corps { flex-direction: row; align-items: center; gap: 16px; padding: 0 16px 0 18px; }
+[data-mode="compact"] .meta { display: contents; }
+[data-mode="compact"] .source { order: -1; flex: 0 0 150px; font-size: 13px; color: var(--encre); }
+[data-mode="compact"] .titre { flex: 1; min-width: 0; display: block; white-space: nowrap; text-overflow: ellipsis; font-size: 14.5px; font-weight: 600; }
+[data-mode="compact"] .heure { font-size: 12.5px; margin-left: 0; }
+
+/* ---------- pastille « nouveaux articles » ---------- */
+.pastille { position: fixed; z-index: 20; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 66px); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px 9px 13px; border: 0; border-radius: 999px; background: var(--encre); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(27,31,39,.25); cursor: pointer; }
+.pastille svg { width: 15px; height: 15px; }
+.pastille[hidden] { display: none; }
+
+/* ---------- fenêtre des sources ---------- */
+dialog { width: min(520px, calc(100% - 24px)); max-height: 82vh; padding: 0; border: 0; border-radius: 12px; background: var(--carte); color: var(--encre); box-shadow: 0 20px 60px rgba(27,31,39,.3); }
+dialog::backdrop { background: rgba(27,31,39,.35); }
+.fen-int { padding: 18px 20px 20px; }
+.fen-tete { display: flex; align-items: center; margin-bottom: 6px; }
+.fen-tete h2 { margin: 0; font-size: 18px; }
+.fermer { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; font-size: 22px; line-height: 1; color: var(--encre-2); cursor: pointer; }
+.fermer:hover { background: rgba(27,31,39,.06); }
+#liste-sources { list-style: none; margin: 0; padding: 0; }
+.groupe { margin: 14px 0 4px; font-size: 13px; font-weight: 600; color: var(--encre-3); }
+.src { padding: 7px 0; border-bottom: 1px solid var(--trait); font-size: 14px; }
+.src-ligne { display: flex; align-items: center; gap: 9px; }
+.src-point { width: 8px; height: 8px; border-radius: 50%; background: var(--encre-3); flex: none; }
+.src[data-ok="oui"] .src-point { background: var(--direct); }
+.src[data-ok="non"] .src-point { background: #d1453b; }
+.src-compte { margin-left: auto; font-size: 12.5px; color: var(--encre-3); white-space: nowrap; }
+.src-erreur { margin: 3px 0 0 17px; font-size: 12px; color: #b03a31; word-break: break-word; }
+.info { padding: 10px 0; color: var(--encre-2); font-size: 14px; }
+
+/* ---------- mobile ---------- */
+@media (max-width: 600px) {
+  :root { --h: 142px; --ecart: 10px; --vignette: 100px; --h-ligne: 48px; }
+  main { padding: 6px 10px 48px; }
+  .barre-int { padding: 10px 12px; gap: 8px; }
+  .bandeau { padding: 0 12px; }
+  .logo { font-size: 21px; }
+  .corps { gap: 4px; padding: 10px 12px; }
+  .titre { font-size: 15.5px; line-height: 1.26; -webkit-line-clamp: 3; }
+  .extrait { font-size: 13px; line-height: 1.4; -webkit-line-clamp: 2; }
+  .meta { font-size: 11.5px; }
+  .substitut { font-size: 20px; }
+  [data-mode="compact"] .corps { gap: 8px; padding: 0 12px; }
+  [data-mode="compact"] .source { flex-basis: 74px; gap: 6px; font-size: 11.5px; }
+  [data-mode="compact"] .titre { font-size: 13.5px; }
+  [data-mode="compact"] .heure { font-size: 11.5px; }
+  .pastille { top: calc(env(safe-area-inset-top, 0px) + 60px); }
+}
+@media (max-width: 480px) {
+  .modes .lib { display: none; }
+  .modes button { padding: 6px 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carte, .carte::before { transition: none; }
+}
+</style>
+</head>
+<body data-mode="classique">
+
+<header class="barre">
+  <div class="barre-int">
+    <h1 class="logo">Le Fil</h1>
+    <button class="etat" id="etat" data-etat="attente" title="État des sources">
+      <span class="point" aria-hidden="true"></span><span id="etat-texte">Chargement…</span>
+    </button>
+    <div class="modes" role="group" aria-label="Affichage">
+      <button type="button" data-mode="classique" aria-pressed="true" title="Classique">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2" width="5" height="5" rx="1"/><path d="M9 3h5.5M9 6h4"/><rect x="1.5" y="9" width="5" height="5" rx="1"/><path d="M9 10h5.5M9 13h4"/></svg>
+        <span class="lib">Classique</span>
+      </button>
+      <button type="button" data-mode="compact" aria-pressed="false" title="Compact">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.5 3h13M1.5 6.33h13M1.5 9.67h13M1.5 13h13"/></svg>
+        <span class="lib">Compact</span>
+      </button>
+    </div>
+  </div>
+</header>
+<p class="bandeau" id="bandeau" hidden>Aperçu avec des articles fictifs : les données du relevé ne sont pas encore disponibles.</p>
+
+<button class="pastille" id="pastille" type="button" hidden>
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+  <span id="pastille-texte"></span>
+</button>
+
+<main>
+  <div class="liste" id="liste"></div>
+  <p class="vide" id="vide">Aucun article pour l’instant. Les articles s’affichent ici dès le prochain relevé.</p>
+</main>
+
+<dialog id="fenetre" aria-labelledby="titre-sources">
+  <div class="fen-int">
+    <div class="fen-tete"><h2 id="titre-sources">Sources</h2><button class="fermer" id="fermer" type="button" aria-label="Fermer">×</button></div>
+    <ul id="liste-sources"></ul>
+  </div>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+const MAX_ARTICLES = 300;      // au-delà, les plus anciens sortent de la page
+const DUREE_NEUF = 15000;      // durée du surlignage d'un nouvel article
+const SEUIL_HAUT = 140;        // en dessous de ce défilement, on considère être en haut
+
+const $ = id => document.getElementById(id);
+const liste = $('liste'), vide = $('vide'), pastille = $('pastille'), etat = $('etat');
+const sansAnimation = matchMedia('(prefers-reduced-motion: reduce)');
+const TITRE_PAGE = document.title;
+
+const presents = new Map();    // id -> élément affiché
+const dejaVus = new Set();     // tous les id rencontrés depuis l'ouverture de la page
+let attente = [];              // nouveautés reçues, pas encore affichées
+let deroulement = false;
+let generation = 0;            // date du relevé actuellement affiché
+let apercu = false;
+
+const memoire = {
+  lire(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  ecrire(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+/* ---------- mode d'affichage ---------- */
+function appliquerMode(m) {
+  document.body.dataset.mode = m;
+  for (const b of document.querySelectorAll('.modes button')) b.setAttribute('aria-pressed', String(b.dataset.mode === m));
+}
+appliquerMode(memoire.lire('lefil.mode') === 'compact' ? 'compact' : 'classique');
+document.querySelector('.modes').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mode]');
+  if (!b) return;
+  appliquerMode(b.dataset.mode);
+  memoire.ecrire('lefil.mode', b.dataset.mode);
+});
+
+/* ---------- utilitaires ---------- */
+function teinte(nom) {
+  let h = 2166136261;
+  for (const c of nom) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); }
+  return (h >>> 0) % 360;
+}
+function initiales(nom) {
+  const mots = nom.replace(/[^\p{L}\p{N}\s-]/gu, ' ').split(/[\s-]+/).filter(Boolean);
+  return (mots.length > 1 ? mots[0][0] + mots[1][0] : nom.slice(0, 2)).toUpperCase();
+}
+const fmtHeure = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const fmtJour = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+function quand(ms) {
+  const d = new Date(ms), auj = new Date(), hier = new Date();
+  hier.setDate(auj.getDate() - 1);
+  if (d.toDateString() === auj.toDateString()) return fmtHeure.format(d);
+  if (d.toDateString() === hier.toDateString()) return 'hier ' + fmtHeure.format(d);
+  return fmtJour.format(d);
+}
+function noeud(tag, classe, texte) {
+  const n = document.createElement(tag);
+  if (classe) n.className = classe;
+  if (texte != null) n.textContent = texte;
+  return n;
+}
+
+function poserImage(vignette, url) {
+  vignette.querySelector('img')?.remove();
+  if (!url || !/^(https?:|data:image\/)/i.test(url)) return;
+  const img = new Image();
+  img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
+  img.onerror = () => img.remove();                              // image bloquée : on garde le substitut
+  img.onload = () => { if (img.naturalWidth < 60) img.remove(); }; // icône ou pixel espion
+  img.src = url;
+  vignette.append(img);
+}
+
+/* ---------- fabrication d'un article (une seule structure pour les deux modes) ---------- */
+function creer(a) {
+  const item = noeud('div', 'item');
+  item.dataset.id = a.id;
+  item.dataset.publie = a.publie;
+  item.style.setProperty('--teinte', teinte(a.source));
+
+  const carte = noeud('a', 'carte');
+  if (/^https?:\/\//i.test(a.lien)) {
+    carte.href = a.lien; carte.target = '_blank'; carte.rel = 'noopener noreferrer';
+  } else {
+    carte.href = '#'; carte.addEventListener('click', e => e.preventDefault());
+  }
+  carte.title = a.titre;
+
+  const vignette = noeud('div', 'vignette');
+  const substitut = noeud('span', 'substitut', initiales(a.source));
+  substitut.setAttribute('aria-hidden', 'true');
+  vignette.append(substitut);
+  poserImage(vignette, a.image);
+
+  const corps = noeud('div', 'corps');
+  corps.append(noeud('h2', 'titre', a.titre));
+  if (a.extrait) corps.append(noeud('p', 'extrait', a.extrait));
+  const meta = noeud('div', 'meta');
+  const source = noeud('span', 'source');
+  source.append(noeud('span', 'nom', a.source));
+  const heure = noeud('time', 'heure', quand(a.publie));
+  heure.dateTime = new Date(a.publie).toISOString();
+  meta.append(source, heure);
+  corps.append(meta);
+
+  carte.append(vignette, corps);
+  item.append(carte);
+  presents.set(a.id, item);
+  dejaVus.add(a.id);
+  return item;
+}
+
+function elaguer() {
+  while (presents.size > MAX_ARTICLES && liste.lastElementChild) {
+    const dernier = liste.lastElementChild;
+    presents.delete(dernier.dataset.id);
+    dernier.remove();
+  }
+}
+function majVide() { vide.hidden = presents.size > 0; }
+
+/* ajout discret, à sa place chronologique (premier relevé d'une source) */
+function fusionner(articles) {
+  for (const a of articles) {
+    if (dejaVus.has(a.id)) continue;
+    let avant = null;
+    for (const e of liste.children) if (+e.dataset.publie < a.publie) { avant = e; break; }
+    liste.insertBefore(creer(a), avant);
+  }
+  elaguer(); majVide();
+}
+
+/* ---------- arrivées en direct ---------- */
+function enHaut() { return !document.hidden && window.scrollY < SEUIL_HAUT; }
+
+function recevoir(articles) {
+  for (const a of articles) {
+    if (dejaVus.has(a.id)) continue;
+    dejaVus.add(a.id);
+    attente.push(a);
+  }
+  derouler();
+}
+
+/* une arrivée à la fois ; si on lit plus bas ou sur un autre onglet, on garde en réserve */
+function derouler() {
+  majPastille();
+  if (deroulement || !attente.length || !enHaut()) return;
+  deroulement = true;
+  inserer(attente.shift());
+  setTimeout(() => { deroulement = false; derouler(); }, attente.length > 8 ? 180 : 700);
+}
+
+function inserer(a) {
+  const item = creer(a);
+  item.classList.add('neuf');
+  if (!sansAnimation.matches) {
+    item.classList.add('arrive');
+    setTimeout(() => item.classList.remove('arrive'), 600);
+  }
+  liste.prepend(item);
+  setTimeout(() => item.classList.remove('neuf'), DUREE_NEUF);
+  elaguer(); majVide(); majPastille();
+}
+
+function majPastille() {
+  const n = attente.length;
+  const montrer = n > 0 && !document.hidden && window.scrollY >= SEUIL_HAUT;
+  pastille.hidden = !montrer;
+  if (montrer) $('pastille-texte').textContent = n === 1 ? '1 nouvel article' : `${n} nouveaux articles`;
+  document.title = n && document.hidden ? `(${n}) ${TITRE_PAGE}` : TITRE_PAGE;
+}
+
+addEventListener('scroll', () => { if (attente.length) derouler(); }, { passive: true });
+document.addEventListener('visibilitychange', derouler);
+pastille.addEventListener('click', () => scrollTo({ top: 0, behavior: sansAnimation.matches ? 'auto' : 'smooth' }));
+
+/* les heures « hier » restent justes après minuit */
+setInterval(() => {
+  for (const item of presents.values()) item.querySelector('.heure').textContent = quand(+item.dataset.publie);
+  afficherGeneration();
+}, 5 * 60 * 1000);
+
+/* ---------- lecture des données publiées par le relevé ---------- */
+const INTERVALLE_LECTURE = 60 * 1000;   // la page relit articles.json chaque minute
+const RETARD_MAX = 45 * 60 * 1000;      // au-delà, le relevé est signalé en retard
+
+function marquer(code, texte, aide) {
+  etat.dataset.etat = code;
+  $('etat-texte').textContent = texte;
+  etat.title = aide || 'État des sources';
+}
+function momentReleve(ms) {
+  const d = new Date(ms);
+  return d.toDateString() === new Date().toDateString() ? 'de ' + fmtHeure.format(d) : 'du ' + fmtJour.format(d);
+}
+function afficherGeneration() {
+  if (!generation) return;
+  if (Date.now() - generation > RETARD_MAX)
+    marquer('coupe', 'Relevé ' + momentReleve(generation), 'Le relevé automatique a du retard : voir l’onglet Actions du dépôt GitHub');
+  else marquer('direct', 'Relevé ' + momentReleve(generation));
+}
+
+async function lire() {
+  // no-cache : le navigateur redemande, et reçoit « pas de changement » si rien n'a bougé
+  const r = await fetch('articles.json', { cache: 'no-cache' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  if (!Array.isArray(d.articles) || !d.genere) throw new Error('format inattendu');
+  return d;
+}
+
+async function sonder() {
+  let d;
+  try { d = await lire(); }
+  catch { marquer('coupe', 'Hors ligne', 'Données illisibles pour l’instant, nouvel essai dans une minute'); return; }
+  if (d.genere !== generation) {
+    generation = d.genere;
+    const inconnus = d.articles.filter(a => !dejaVus.has(a.id)).sort((a, b) => a.publie - b.publie);
+    const discrets = inconnus.filter(a => a.discret);
+    if (discrets.length) fusionner(discrets);   // premier relevé d'une source : sans animation
+    recevoir(inconnus.filter(a => !a.discret));
+  }
+  afficherGeneration();
+}
+
+async function demarrer() {
+  let d;
+  try {
+    if (new URLSearchParams(location.search).has('demo')) throw new Error('aperçu demandé');
+    d = await lire();
+  } catch { lancerApercu(); return; }
+  generation = d.genere;
+  const frag = document.createDocumentFragment();
+  for (const a of d.articles) frag.append(creer(a));
+  liste.append(frag);
+  majVide();
+  afficherGeneration();
+  setInterval(sonder, INTERVALLE_LECTURE);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sonder(); });
+}
+
+/* ---------- fenêtre « Sources » ---------- */
+const fenetre = $('fenetre');
+$('fermer').addEventListener('click', () => fenetre.close());
+fenetre.addEventListener('click', e => { if (e.target === fenetre) fenetre.close(); });
+etat.addEventListener('click', async () => {
+  const ul = $('liste-sources');
+  ul.replaceChildren(noeud('li', 'info', 'Chargement…'));
+  fenetre.showModal();
+  if (apercu) {
+    ul.replaceChildren(noeud('li', 'info', 'L’état réel de chaque source s’affiche ici une fois le premier relevé publié.'));
+    return;
+  }
+  try {
+    const d = await (await fetch('sources.json', { cache: 'no-cache' })).json();
+    const sources = d.sources;
+    ul.replaceChildren(noeud('li', 'info', `Relevé ${momentReleve(d.genere)}. GitHub relance le relevé toutes les 10 minutes environ, parfois avec du retard.`));
+    for (const [cat, libelle] of [['tech', 'Tech et bidouille'], ['general', 'Actualité générale']]) {
+      const groupe = sources.filter(s => s.categorie === cat);
+      if (!groupe.length) continue;
+      ul.append(noeud('li', 'groupe', libelle));
+      for (const s of groupe) {
+        const li = noeud('li', 'src');
+        li.dataset.ok = s.ok === true ? 'oui' : s.ok === false ? 'non' : 'attente';
+        const compte = s.ok === false ? 'en erreur'
+          : s.ok == null ? 'pas encore relevée'
+          : `${s.articles} article${s.articles > 1 ? 's' : ''}`;
+        const ligne = noeud('div', 'src-ligne');
+        ligne.append(noeud('span', 'src-point'), noeud('span', '', s.nom), noeud('span', 'src-compte', compte));
+        li.append(ligne);
+        if (s.erreur) li.append(noeud('div', 'src-erreur', s.erreur));
+        ul.append(li);
+      }
+    }
+  } catch {
+    ul.replaceChildren(noeud('li', 'info', 'Impossible de lire l’état des sources pour l’instant.'));
+  }
+});
+
+/* ---------- aperçu sans serveur (données fictives) ---------- */
+function lancerApercu() {
+  apercu = true;
+  marquer('apercu', 'Aperçu');
+  $('bandeau').hidden = false;
+
+  const TECH = ['Korben', 'Next', 'Numerama', 'Frandroid', 'Les Numériques', 'Clubic', 'Journal du Geek',
+    'IT-Connect', 'LinuxFr.org', 'Hackaday', 'Hacker News', 'Le Monde Informatique', '01net', 'ZDNet'];
+  const GENERAL = ['Le Monde', 'Franceinfo', 'Le Figaro', 'BFMTV', 'France 24'];
+  const T_TECH = [
+    'Transformer un vieux portable en serveur domestique, le guide pas à pas',
+    'Le dernier noyau Linux améliore l’autonomie des ordinateurs portables',
+    'Domotique : piloter ses volets avec un ESP32 et quelques lignes de code',
+    'Python : cinq modules de la bibliothèque standard qu’on oublie trop souvent',
+    'Hameçonnage : une campagne vise les messageries professionnelles, comment s’en protéger',
+    'Un écran tactile à petit prix pour fabriquer son tableau de bord maison',
+    'Impression 3D : calibrer son plateau en moins de dix minutes',
+    'Réseau domestique : faut-il déjà passer au Wi-Fi 7 ?',
+    'Une faille dans un routeur grand public permet une prise de contrôle à distance',
+    'Les cartes graphiques d’entrée de gamme tiennent-elles vraiment la 1440p ?',
+    'Microsoft 365 : ce qui change côté administration ce mois-ci',
+    'Un développeur recrée une borne d’arcade des années 80 dans le navigateur',
+    'Linux Mint : les réglages à faire juste après l’installation',
+    'Sauvegardes : la règle du 3-2-1 expliquée simplement',
+    'Un bras robotisé open source pour moins de 100 euros de pièces',
+    'Les modèles d’IA locaux tournent désormais sur un simple portable',
+    'Kubernetes ou simple machine virtuelle : quel choix pour un petit projet ?',
+    'PowerShell : automatiser l’inventaire d’un parc en une vingtaine de lignes',
+    'Ce microcontrôleur à trois euros fait tourner un serveur web complet',
+    'Disques durs ou SSD pour un NAS familial : le match en conditions réelles',
+  ];
+  const T_GENERAL = [
+    'Sommet européen : les dirigeants réunis pour parler énergie et industrie',
+    'Tempête : vigilance orange pour vent violent sur la façade atlantique',
+    'Budget : le texte revient à l’Assemblée nationale pour une nouvelle lecture',
+    'Transports : perturbations attendues sur plusieurs lignes ce week-end',
+    'Climat : un rapport alerte sur la hausse du niveau des mers en Europe',
+    'Santé : la campagne de vaccination contre la grippe prolongée de deux semaines',
+  ];
+  const EXTRAITS = [
+    'Un tour d’horizon de ce qui change concrètement pour les utilisateurs, avec les points à surveiller avant de mettre à jour son installation et les alternatives possibles pour ceux qui préfèrent attendre.',
+    'Ce projet montre qu’avec un peu de patience et du matériel de récupération, on obtient un résultat étonnamment fiable pour un budget très raisonnable. Le code est disponible et commenté.',
+    'Les chercheurs détaillent la méthode employée et recommandent d’appliquer les correctifs sans attendre, en particulier sur les équipements exposés directement à Internet.',
+    'Plusieurs mesures ont été annoncées dans la matinée. Les détails pratiques doivent être précisés dans les prochains jours par les services concernés.',
+    'Nous avons testé la configuration pendant une semaine : performances, consommation, bruit et rapport qualité-prix, voici ce qu’il faut en retenir avant d’acheter.',
+    '',
+  ];
+  const vignetteFictive = i => {
+    const h1 = (i * 47) % 360, h2 = (h1 + 50 + (i * 13) % 70) % 360;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h1} 52% 64%)"/><stop offset="1" stop-color="hsl(${h2} 46% 34%)"/></linearGradient></defs><rect width="320" height="200" fill="url(#g)"/><circle cx="${70 + (i * 37) % 180}" cy="${50 + (i * 29) % 100}" r="${38 + (i * 11) % 46}" fill="rgba(255,255,255,.2)"/><rect x="${(i * 53) % 200}" y="118" width="150" height="100" rx="10" fill="rgba(0,0,0,.14)"/></svg>`;
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  };
+
+  let n = 0;
+  const fabriquer = publie => {
+    n++;
+    const general = n % 4 === 0;
+    const sources = general ? GENERAL : TECH, titres = general ? T_GENERAL : T_TECH;
+    return {
+      id: 'apercu-' + n, titre: titres[(n * 7) % titres.length], lien: '#',
+      extrait: EXTRAITS[(n * 5) % EXTRAITS.length], source: sources[(n * 3) % sources.length],
+      image: n % 5 === 2 ? null : vignetteFictive(n), publie, vu: Date.now(),
+    };
+  };
+
+  let t = Date.now() - 4 * 60 * 1000;
+  const depart = [];
+  for (let i = 0; i < 24; i++) { depart.push(fabriquer(t)); t -= (6 + (i * 7) % 19) * 60 * 1000; }
+  for (const a of depart) liste.append(creer(a));
+  majVide();
+
+  const suivant = () => {
+    const lot = Array.from({ length: Math.random() < .3 ? 2 : 1 }, () => fabriquer(Date.now()));
+    recevoir(lot);
+    setTimeout(suivant, 8000 + Math.random() * 7000);
+  };
+  setTimeout(suivant, 2500);
+}
+
+demarrer();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+# Le Fil : liste des sources
+#
+# Pour chaque source :
+#   nom        nom affiché
+#   site       page d'accueil (sert à retrouver le flux tout seul si l'adresse change)
+#   flux       adresse du flux RSS ou Atom
+#   categorie  "tech" ou "general"
+#   max_par_heure (facultatif) : plafond d'articles retenus par heure pour cette source.
+#
+# Aucun tri, aucun score : la liste est chronologique. Le seul réglage du ratio
+# tech / généraliste est max_par_heure, posé sur les sites généralistes qui publient
+# beaucoup plus que les autres. Monte-le ou descends-le à ton goût.
+#
+# Après modification et envoi sur GitHub, un relevé se lance aussitôt avec la nouvelle liste.
+
+[reglages]
+age_max_heures = 48     # les articles plus anciens sont ignorés
+historique = 300        # articles publiés (les plus récents)
+images_par_releve = 30  # articles sans image dont on va chercher l'image sur la page
+
+
+# ---------- Tech, informatique, bidouille (20) ----------
+
+[[source]]
+nom = "Korben"
+site = "https://korben.info"
+flux = "https://korben.info/feed"
+categorie = "tech"
+
+[[source]]
+nom = "Next"
+site = "https://next.ink"
+flux = "https://next.ink/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Numerama"
+site = "https://www.numerama.com"
+flux = "https://www.numerama.com/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "01net"
+site = "https://www.01net.com"
+flux = "https://www.01net.com/actualites/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Frandroid"
+site = "https://www.frandroid.com"
+flux = "https://www.frandroid.com/feed"
+categorie = "tech"
+
+[[source]]
+nom = "Les Numériques"
+site = "https://www.lesnumeriques.com"
+flux = "https://www.lesnumeriques.com/rss.xml"
+categorie = "tech"
+
+[[source]]
+nom = "Clubic"
+site = "https://www.clubic.com"
+flux = "https://www.clubic.com/feed/news.rss"
+categorie = "tech"
+
+[[source]]
+nom = "Journal du Geek"
+site = "https://www.journaldugeek.com"
+flux = "https://www.journaldugeek.com/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Presse-citron"
+site = "https://www.presse-citron.net"
+flux = "https://www.presse-citron.net/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Tom's Hardware"
+site = "https://www.tomshardware.fr"
+flux = "https://www.tomshardware.fr/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Le Monde Informatique"
+site = "https://www.lemondeinformatique.fr"
+flux = "https://www.lemondeinformatique.fr/flux-rss/thematique/toutes-les-actualites/rss.xml"
+categorie = "tech"
+
+[[source]]
+nom = "ZDNet"
+site = "https://www.zdnet.fr"
+flux = "https://www.zdnet.fr/feeds/rss/actualites/"
+categorie = "tech"
+
+[[source]]
+nom = "LeMagIT"
+site = "https://www.lemagit.fr"
+flux = "https://www.lemagit.fr/rss/ContentSyndication.xml"
+categorie = "tech"
+
+[[source]]
+nom = "IT-Connect"
+site = "https://www.it-connect.fr"
+flux = "https://www.it-connect.fr/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "LinuxFr.org"
+site = "https://linuxfr.org"
+flux = "https://linuxfr.org/news.atom"
+categorie = "tech"
+
+[[source]]
+nom = "Journal du hacker"
+site = "https://www.journalduhacker.net"
+flux = "https://www.journalduhacker.net/rss"
+categorie = "tech"
+
+# Les quatre suivantes sont en anglais : supprime-les si tu préfères un fil 100 % français.
+
+[[source]]
+nom = "Hacker News"
+site = "https://news.ycombinator.com"
+flux = "https://hnrss.org/frontpage"
+categorie = "tech"
+
+[[source]]
+nom = "Hackaday"
+site = "https://hackaday.com"
+flux = "https://hackaday.com/blog/feed/"
+categorie = "tech"
+
+[[source]]
+nom = "Ars Technica"
+site = "https://arstechnica.com"
+flux = "https://feeds.arstechnica.com/arstechnica/index"
+categorie = "tech"
+
+[[source]]
+nom = "BleepingComputer"
+site = "https://www.bleepingcomputer.com"
+flux = "https://www.bleepingcomputer.com/feed/"
+categorie = "tech"
+
+
+# ---------- Actualité générale (5) ----------
+# Flux « à la une » quand le site en propose un, plafonnés à 2 articles par heure.
+
+[[source]]
+nom = "Le Monde"
+site = "https://www.lemonde.fr"
+flux = "https://www.lemonde.fr/rss/une.xml"
+categorie = "general"
+max_par_heure = 2
+
+[[source]]
+nom = "Franceinfo"
+site = "https://www.francetvinfo.fr"
+flux = "https://www.francetvinfo.fr/titres.rss"
+categorie = "general"
+max_par_heure = 2
+
+[[source]]
+nom = "Le Figaro"
+site = "https://www.lefigaro.fr"
+flux = "https://www.lefigaro.fr/rss/figaro_actualites.xml"
+categorie = "general"
+max_par_heure = 2
+
+[[source]]
+nom = "BFMTV"
+site = "https://www.bfmtv.com"
+flux = "https://www.bfmtv.com/rss/news-24-7/"
+categorie = "general"
+max_par_heure = 2
+
+[[source]]
+nom = "France 24"
+site = "https://www.france24.com/fr/"
+flux = "https://www.france24.com/fr/rss"
+categorie = "general"
+max_par_heure = 2
