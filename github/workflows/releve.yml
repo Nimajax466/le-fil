@@ -1,0 +1,80 @@
+name: Relevé des flux
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # toutes les 10 minutes ; GitHub peut retarder certains passages
+  workflow_dispatch:          # bouton « Run workflow » pour lancer un relevé à la main
+  push:
+    branches: [main]          # une modification (sources, page…) relance aussitôt un relevé
+
+permissions:
+  contents: write    # sauvegarder la mémoire du relevé dans la branche « etat »
+  pages: write       # publier le site
+  id-token: write    # exigé par la publication sur GitHub Pages
+  actions: write     # garder la tâche planifiée active (règle des 60 jours)
+
+concurrency:
+  group: releve
+  cancel-in-progress: false
+
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: github-pages
+      url: ${{ steps.publication.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Récupérer la mémoire du relevé précédent
+        run: |
+          if git fetch --quiet --depth=1 origin etat 2>/dev/null; then
+            git show FETCH_HEAD:etat.json > etat.json
+            echo "Mémoire récupérée ($(du -h etat.json | cut -f1))."
+          else
+            echo "Pas encore de mémoire : premier relevé."
+          fi
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install --quiet -r requirements.txt
+
+      - name: Relever les flux
+        run: python releve.py
+
+      # Un seul commit, remplacé à chaque passage : la branche ne garde aucun historique
+      # et le dépôt ne grossit pas.
+      - name: Sauvegarder la mémoire dans la branche « etat »
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          blob=$(git hash-object -w etat.json)
+          arbre=$(printf '100644 blob %s\tetat.json\n' "$blob" | git mktree)
+          commit=$(git commit-tree "$arbre" -m "Mémoire du relevé")
+          git push --quiet --force origin "$commit:refs/heads/etat"
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - id: publication
+        uses: actions/deploy-pages@v5
+
+      # GitHub coupe les tâches planifiées d'un dépôt public sans activité depuis 60 jours.
+      # Cet appel remet le compteur à zéro.
+      - name: Garder la tâche planifiée active
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/releve.yml/enable" --silent || echo "Appel non abouti, sans conséquence immédiate."
