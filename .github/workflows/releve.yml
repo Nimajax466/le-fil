@@ -2,7 +2,7 @@ name: Relevé des flux
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # toutes les 10 minutes ; GitHub peut retarder certains passages
+    - cron: "3,13,23,33,43,53 * * * *"   # toutes les 10 minutes, décalées des heures pleines (moins encombrées)
   workflow_dispatch:          # bouton « Run workflow » pour lancer un relevé à la main
   push:
     branches: [main]          # une modification (sources, page…) relance aussitôt un relevé
@@ -18,12 +18,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 1. Relever les flux et préparer le site
   releve:
     runs-on: ubuntu-latest
     timeout-minutes: 8
-    environment:
-      name: github-pages
-      url: ${{ steps.publication.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v6
@@ -68,9 +66,6 @@ jobs:
         with:
           path: site
 
-      - id: publication
-        uses: actions/deploy-pages@v5
-
       # GitHub coupe les tâches planifiées d'un dépôt public sans activité depuis 60 jours.
       # Cet appel remet le compteur à zéro.
       - name: Garder la tâche planifiée active
@@ -78,3 +73,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/releve.yml/enable" --silent || echo "Appel non abouti, sans conséquence immédiate."
+
+  # 2. Publier le site, dans un job à part comme le recommande la documentation de deploy-pages.
+  # deploy-pages ne cherche le site envoyé qu'une seule fois : si GitHub met un peu de temps
+  # à l'enregistrer, il échoue. On attend donc et on réessaie avant d'abandonner.
+  publication:
+    needs: releve
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    environment:
+      name: github-pages
+      url: ${{ steps.essai2.outputs.page_url || steps.essai1.outputs.page_url }}
+
+    steps:
+      - id: essai1
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Attendre avant un second essai
+        if: steps.essai1.outcome == 'failure'
+        run: |
+          echo "::notice::Premier essai de publication échoué, nouvel essai dans 60 secondes."
+          sleep 60
+
+      - id: essai2
+        if: steps.essai1.outcome == 'failure'
+        uses: actions/deploy-pages@v5
